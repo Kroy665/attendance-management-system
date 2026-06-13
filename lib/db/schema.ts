@@ -49,6 +49,7 @@ export const pdfUploads = pgTable('pdf_uploads', {
   scrapingMethod: varchar('scraping_method', { length: 20 }), // e2b, fallback, manual
   employeesCount: integer('employees_count').default(0),
   recordsCount: integer('records_count').default(0),
+  duplicatesSkipped: integer('duplicates_skipped').default(0),
   errorMessage: text('error_message'),
   uploadedBy: varchar('uploaded_by', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),

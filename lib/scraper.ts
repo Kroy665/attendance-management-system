@@ -2,12 +2,13 @@ import { Sandbox } from 'e2b';
 import { put } from '@vercel/blob';
 import { db } from './db';
 import { employees, attendanceRecords, pdfUploads } from './db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 interface ScraperResult {
   success: boolean;
   employeesCount: number;
   recordsCount: number;
+  duplicatesSkipped?: number;
   error?: string;
   scrapingMethod: 'e2b' | 'fallback';
 }
@@ -94,6 +95,7 @@ export async function processPdfWithE2B(
         status: 'completed',
         employeesCount: result.employeesCount,
         recordsCount: result.recordsCount,
+        duplicatesSkipped: result.duplicatesSkipped,
         completedAt: new Date(),
       })
       .where(eq(pdfUploads.id, uploadId));
@@ -102,6 +104,7 @@ export async function processPdfWithE2B(
       success: true,
       employeesCount: result.employeesCount,
       recordsCount: result.recordsCount,
+      duplicatesSkipped: result.duplicatesSkipped,
       scrapingMethod: 'e2b',
     };
   } catch (error) {
@@ -171,7 +174,7 @@ async function fallbackToBlobStorage(
 async function saveToDatabase(
   data: any,
   uploadId: number
-): Promise<{ employeesCount: number; recordsCount: number }> {
+): Promise<{ employeesCount: number; recordsCount: number; duplicatesSkipped: number }> {
   // Insert employees
   for (const emp of data.employees) {
     await db
@@ -193,8 +196,26 @@ async function saveToDatabase(
       });
   }
 
-  // Insert attendance records
+  // Insert attendance records with duplicate checking
+  let recordsInserted = 0;
+  let duplicatesSkipped = 0;
+
   for (const record of data.attendance) {
+    // Check if record already exists (same employee + same date)
+    const existingRecord = await db.query.attendanceRecords.findFirst({
+      where: and(
+        eq(attendanceRecords.employeeId, record.employee_id),
+        eq(attendanceRecords.attendanceDate, record.attendance_date)
+      ),
+    });
+
+    if (existingRecord) {
+      console.log(`Skipping duplicate: ${record.employee_id} on ${record.attendance_date}`);
+      duplicatesSkipped++;
+      continue;
+    }
+
+    // Insert new record
     await db.insert(attendanceRecords).values({
       employeeId: record.employee_id,
       employeeName: record.employee_name,
@@ -210,10 +231,12 @@ async function saveToDatabase(
       shiftTiming: record.shift_timing,
       pdfUploadId: uploadId,
     });
+    recordsInserted++;
   }
 
   return {
     employeesCount: data.employees.length,
-    recordsCount: data.attendance.length,
+    recordsCount: recordsInserted,
+    duplicatesSkipped,
   };
 }

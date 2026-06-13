@@ -11,6 +11,11 @@ export default auth((req) => {
     }
   }
 
+  // Redirect /admin to /admin/overview
+  if (pathname === '/admin' || pathname === '/admin/') {
+    return NextResponse.redirect(new URL('/admin/overview', req.url));
+  }
+
   return NextResponse.next();
 });
 
