@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import AttendanceTable from '@/components/attendance-table';
 import StatsDashboard from '@/components/stats-dashboard';
 
@@ -39,7 +40,9 @@ export default function Home() {
           {/* Attendance Records */}
           <div>
             <h2 className="text-xl font-semibold mb-4">Attendance Records</h2>
-            <AttendanceTable />
+            <Suspense fallback={<div className="text-center py-8">Loading attendance records...</div>}>
+              <AttendanceTable />
+            </Suspense>
           </div>
         </div>
       </main>

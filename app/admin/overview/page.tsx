@@ -27,6 +27,8 @@ interface Stats {
   failedUploads: number;
   pendingUploads: number;
   totalDuplicatesSkipped: number;
+  employeeCount: number;
+  studentCount: number;
 }
 
 export default function AdminOverviewPage() {
@@ -62,6 +64,11 @@ export default function AdminOverviewPage() {
         const pendingUploads = uploadsData.data.filter((u: Upload) => u.status === 'pending' || u.status === 'processing').length;
         const totalDuplicatesSkipped = uploadsData.data.reduce((sum: number, u: Upload) => sum + (u.duplicatesSkipped || 0), 0);
 
+        // Calculate employee/student counts from employeeTypeBreakdown (unique individuals)
+        const employeeTypeBreakdown = statsData.success ? statsData.data.employeeTypeBreakdown : [];
+        const employeeCount = employeeTypeBreakdown.find((t: any) => t.employeeType === 'employee')?.count || 0;
+        const studentCount = employeeTypeBreakdown.find((t: any) => t.employeeType === 'student')?.count || 0;
+
         setStats({
           totalEmployees: statsData.success ? statsData.data.totalEmployees : 0,
           totalRecords: statsData.success ? statsData.data.totalRecords : 0,
@@ -70,6 +77,8 @@ export default function AdminOverviewPage() {
           failedUploads,
           pendingUploads,
           totalDuplicatesSkipped,
+          employeeCount,
+          studentCount,
         });
       }
     } catch (error) {
@@ -146,13 +155,15 @@ export default function AdminOverviewPage() {
             <h2 className="text-xl font-semibold mb-4">Key Metrics</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
-                <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Total Employees</div>
+                <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Total Individuals</div>
                 <div className="text-3xl font-bold">{stats?.totalEmployees.toLocaleString() || 0}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">Employees + Students</div>
               </div>
 
               <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
                 <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Attendance Records</div>
                 <div className="text-3xl font-bold">{stats?.totalRecords.toLocaleString() || 0}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">Total entries</div>
               </div>
 
               <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
@@ -164,6 +175,42 @@ export default function AdminOverviewPage() {
                 <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">Duplicates Prevented</div>
                 <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                   {stats?.totalDuplicatesSkipped || 0}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Employee/Student Breakdown */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4">By Type (Individuals)</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-zinc-600 dark:text-zinc-400">Employees</div>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                    Employee
+                  </span>
+                </div>
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {stats?.employeeCount || 0}
+                </div>
+                <div className="text-sm text-zinc-500 dark:text-zinc-500 mt-1">
+                  {stats?.totalEmployees ? ((stats.employeeCount / stats.totalEmployees) * 100).toFixed(1) : 0}% of total individuals
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-zinc-600 dark:text-zinc-400">Students</div>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                    Student
+                  </span>
+                </div>
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {stats?.studentCount || 0}
+                </div>
+                <div className="text-sm text-zinc-500 dark:text-zinc-500 mt-1">
+                  {stats?.totalEmployees ? ((stats.studentCount / stats.totalEmployees) * 100).toFixed(1) : 0}% of total individuals
                 </div>
               </div>
             </div>

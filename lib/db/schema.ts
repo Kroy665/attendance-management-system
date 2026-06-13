@@ -14,6 +14,7 @@ export const employees = pgTable('employees', {
   id: serial('id').primaryKey(),
   employeeId: varchar('employee_id', { length: 20 }).notNull().unique(),
   employeeName: varchar('employee_name', { length: 100 }).notNull(),
+  employeeType: varchar('employee_type', { length: 20 }).notNull().default('employee'), // 'employee' or 'student'
   branch: varchar('branch', { length: 100 }),
   department: varchar('department', { length: 200 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -25,6 +26,7 @@ export const attendanceRecords = pgTable('attendance_records', {
   id: serial('id').primaryKey(),
   employeeId: varchar('employee_id', { length: 20 }).notNull(),
   employeeName: varchar('employee_name', { length: 100 }).notNull(),
+  employeeType: varchar('employee_type', { length: 20 }).notNull().default('employee'), // 'employee' or 'student'
   branch: varchar('branch', { length: 100 }),
   department: varchar('department', { length: 200 }),
   attendanceDate: varchar('attendance_date', { length: 20 }).notNull(),

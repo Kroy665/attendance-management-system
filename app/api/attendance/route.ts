@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const branch = searchParams.get('branch');
     const department = searchParams.get('department');
     const status = searchParams.get('status');
+    const type = searchParams.get('type');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const sortBy = searchParams.get('sortBy') || 'date';
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
 
-    console.log('Search params:', { search, branch, department, status, startDate, endDate, sortBy, sortOrder, page, limit });
+    console.log('Search params:', { search, branch, department, status, type, startDate, endDate, sortBy, sortOrder, page, limit });
 
     // Build where conditions
     const conditions = [];
@@ -44,6 +45,10 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       conditions.push(eq(attendanceRecords.status, status));
+    }
+
+    if (type) {
+      conditions.push(eq(attendanceRecords.employeeType, type));
     }
 
     // Date filtering - convert DD-MMM-YYYY format to date for comparison

@@ -61,7 +61,7 @@ export async function processPdfWithE2B(
       pdfBuffer.buffer.slice(
         pdfBuffer.byteOffset,
         pdfBuffer.byteOffset + pdfBuffer.byteLength
-      )
+      ) as ArrayBuffer
     );
 
     // Install dependencies
@@ -171,17 +171,31 @@ async function fallbackToBlobStorage(
   }
 }
 
+// Helper function to determine employee type from ID
+function getEmployeeType(employeeId: string): 'employee' | 'student' {
+  if (employeeId.startsWith('DS')) {
+    return 'student';
+  } else if (employeeId.startsWith('E')) {
+    return 'employee';
+  }
+  // Default to employee for unknown patterns
+  return 'employee';
+}
+
 async function saveToDatabase(
   data: any,
   uploadId: number
 ): Promise<{ employeesCount: number; recordsCount: number; duplicatesSkipped: number }> {
   // Insert employees
   for (const emp of data.employees) {
+    const employeeType = getEmployeeType(emp.employee_id);
+
     await db
       .insert(employees)
       .values({
         employeeId: emp.employee_id,
         employeeName: emp.employee_name,
+        employeeType,
         branch: emp.branch,
         department: emp.department,
       })
@@ -189,6 +203,7 @@ async function saveToDatabase(
         target: employees.employeeId,
         set: {
           employeeName: emp.employee_name,
+          employeeType,
           branch: emp.branch,
           department: emp.department,
           updatedAt: new Date(),
@@ -216,9 +231,12 @@ async function saveToDatabase(
     }
 
     // Insert new record
+    const employeeType = getEmployeeType(record.employee_id);
+
     await db.insert(attendanceRecords).values({
       employeeId: record.employee_id,
       employeeName: record.employee_name,
+      employeeType,
       branch: record.branch,
       department: record.department,
       attendanceDate: record.attendance_date,

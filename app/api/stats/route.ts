@@ -42,6 +42,24 @@ export async function GET() {
       .from(attendanceRecords)
       .groupBy(attendanceRecords.department);
 
+    // Get employee type breakdown from attendance records
+    const typeBreakdown = await db
+      .select({
+        employeeType: attendanceRecords.employeeType,
+        count: sql<number>`count(*)`,
+      })
+      .from(attendanceRecords)
+      .groupBy(attendanceRecords.employeeType);
+
+    // Get employee type breakdown from employees table (for unique individuals)
+    const employeeTypeBreakdown = await db
+      .select({
+        employeeType: employees.employeeType,
+        count: sql<number>`count(*)`,
+      })
+      .from(employees)
+      .groupBy(employees.employeeType);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -58,6 +76,14 @@ export async function GET() {
         departmentBreakdown: departmentBreakdown.map((d) => ({
           department: d.department,
           count: Number(d.count),
+        })),
+        typeBreakdown: typeBreakdown.map((t) => ({
+          employeeType: t.employeeType,
+          count: Number(t.count),
+        })),
+        employeeTypeBreakdown: employeeTypeBreakdown.map((t) => ({
+          employeeType: t.employeeType,
+          count: Number(t.count),
         })),
       },
     });

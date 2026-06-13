@@ -8,6 +8,7 @@ interface AttendanceRecord {
   id: number;
   employeeId: string;
   employeeName: string;
+  employeeType: string;
   branch: string | null;
   department: string | null;
   attendanceDate: string;
@@ -44,6 +45,7 @@ export default function AttendanceTable() {
   const [selectedBranch, setSelectedBranch] = useState(searchParams.get('branch') || '');
   const [selectedDepartment, setSelectedDepartment] = useState(searchParams.get('department') || '');
   const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
+  const [selectedType, setSelectedType] = useState(searchParams.get('type') || '');
   const [startDate, setStartDate] = useState(searchParams.get('startDate') || '');
   const [endDate, setEndDate] = useState(searchParams.get('endDate') || '');
 
@@ -63,7 +65,7 @@ export default function AttendanceTable() {
   useEffect(() => {
     fetchRecords();
     updateURL();
-  }, [page, search, selectedBranch, selectedDepartment, selectedStatus, startDate, endDate, sortBy, sortOrder]);
+  }, [page, search, selectedBranch, selectedDepartment, selectedStatus, selectedType, startDate, endDate, sortBy, sortOrder]);
 
   function updateURL() {
     const params = new URLSearchParams();
@@ -72,6 +74,7 @@ export default function AttendanceTable() {
     if (selectedBranch) params.set('branch', selectedBranch);
     if (selectedDepartment) params.set('department', selectedDepartment);
     if (selectedStatus) params.set('status', selectedStatus);
+    if (selectedType) params.set('type', selectedType);
     if (startDate) params.set('startDate', startDate);
     if (endDate) params.set('endDate', endDate);
     if (sortBy !== 'date') params.set('sortBy', sortBy);
@@ -109,6 +112,7 @@ export default function AttendanceTable() {
       if (selectedBranch) params.append('branch', selectedBranch);
       if (selectedDepartment) params.append('department', selectedDepartment);
       if (selectedStatus) params.append('status', selectedStatus);
+      if (selectedType) params.append('type', selectedType);
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (sortBy) params.append('sortBy', sortBy);
@@ -146,6 +150,7 @@ export default function AttendanceTable() {
     setSelectedBranch('');
     setSelectedDepartment('');
     setSelectedStatus('');
+    setSelectedType('');
     setStartDate('');
     setEndDate('');
     setSortBy('date');
@@ -174,7 +179,7 @@ export default function AttendanceTable() {
 
   async function exportToCsv() {
     const csvContent = [
-      ['Employee ID', 'Employee Name', 'Branch', 'Department', 'Date', 'In Time', 'Out Time', 'Total Hours', 'Status', 'Shift'].join(','),
+      ['ID', 'Name', 'Branch', 'Department', 'Date', 'In Time', 'Out Time', 'Total Hours', 'Status', 'Shift'].join(','),
       ...records.map(r => [
         r.employeeId,
         `"${r.employeeName}"`,
@@ -203,10 +208,10 @@ export default function AttendanceTable() {
       <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Filters</h2>
-          {(search || selectedBranch || selectedDepartment || selectedStatus || startDate || endDate) && (
+          {(search || selectedBranch || selectedDepartment || selectedStatus || selectedType || startDate || endDate) && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                {[search, selectedBranch, selectedDepartment, selectedStatus, startDate, endDate].filter(Boolean).length} active
+                {[search, selectedBranch, selectedDepartment, selectedStatus, selectedType, startDate, endDate].filter(Boolean).length} active
               </span>
               <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
             </div>
@@ -220,7 +225,7 @@ export default function AttendanceTable() {
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Employee ID or Name"
+                placeholder="ID or Name"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -307,6 +312,25 @@ export default function AttendanceTable() {
 
           <div>
             <label className="block text-sm font-medium mb-1">
+              Type {selectedType && <span className="text-blue-600 dark:text-blue-400">✓ Active</span>}
+            </label>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md ${
+                selectedType
+                  ? 'border-blue-500 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/30 ring-1 ring-blue-500'
+                  : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
+              }`}
+            >
+              <option value="">All Types</option>
+              <option value="employee">Employees</option>
+              <option value="student">Students</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
               Start Date {startDate && <span className="text-blue-600 dark:text-blue-400">✓ Active</span>}
             </label>
             <input
@@ -371,7 +395,7 @@ export default function AttendanceTable() {
                   }`}
                   onClick={() => handleSort('employeeId')}
                 >
-                  Employee ID <span className="ml-1">{getSortIcon('employeeId')}</span>
+                  ID <span className="ml-1">{getSortIcon('employeeId')}</span>
                 </th>
                 <th
                   className={`px-4 py-3 text-left text-sm font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 select-none ${
@@ -455,7 +479,18 @@ export default function AttendanceTable() {
               ) : (
                 records.map((record) => (
                   <tr key={record.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                    <td className="px-4 py-3 text-sm">{record.employeeId}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span>{record.employeeId}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          record.employeeType === 'student'
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        }`}>
+                          {record.employeeType === 'student' ? 'Student' : 'Employee'}
+                        </span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-sm">{record.employeeName}</td>
                     <td className="px-4 py-3 text-sm">{record.branch || '-'}</td>
                     <td className="px-4 py-3 text-sm">{record.department || '-'}</td>
