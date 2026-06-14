@@ -43,7 +43,7 @@ export async function processPdfWithE2B(
     const path = await import('path');
     const pythonScriptPath = path.join(
       process.cwd(),
-      '../pdf-scraper/main.py'
+      './main.py'
     );
 
     if (!fs.existsSync(pythonScriptPath)) {
